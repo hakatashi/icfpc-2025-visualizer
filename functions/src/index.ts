@@ -88,7 +88,7 @@ export const exploreAedificium = onCall<
 	const {plans, problemName = 'probatio'} = request.data;
 
 	if (!plans || !Array.isArray(plans)) {
-		throw new Error('Invalid request: plans array is required');
+		throw new Error('無効なリクエスト: plans配列が必要です');
 	}
 
 	// Filter out empty strings and validate plans
@@ -103,7 +103,7 @@ export const exploreAedificium = onCall<
 
 	if (validPlans.length === 0) {
 		throw new Error(
-			'Invalid request: at least one valid plan is required (digits 0-5 only)',
+			'無効なリクエスト: 少なくとも1つの有効なプラン(0-5の数字のみ)が必要です',
 		);
 	}
 
