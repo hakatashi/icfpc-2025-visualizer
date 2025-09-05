@@ -1,4 +1,10 @@
-import {createSignal, createResource, type Component, type JSX, For} from 'solid-js';
+import {
+	createSignal,
+	createResource,
+	type Component,
+	type JSX,
+	For,
+} from 'solid-js';
 import {exploreAedificium} from '~/lib/firebase';
 
 import styles from './index.module.css';
@@ -29,9 +35,10 @@ const Index: Component = () => {
 	const [loading, setLoading] = createSignal(false);
 	const [error, setError] = createSignal('');
 
-	const onSubmitExplore: JSX.EventHandler<HTMLFormElement, SubmitEvent> = async (
-		event,
-	) => {
+	const onSubmitExplore: JSX.EventHandler<
+		HTMLFormElement,
+		SubmitEvent
+	> = async (event) => {
 		event.preventDefault();
 		setError('');
 		setResult(null);
@@ -40,21 +47,26 @@ const Index: Component = () => {
 		try {
 			const plansArray = plans()
 				.split(',')
-				.map(plan => plan.trim())
-				.filter(plan => plan.length > 0);
+				.map((plan) => plan.trim())
+				.filter((plan) => plan.length > 0);
 
 			if (plansArray.length === 0) {
 				throw new Error('Please enter at least one route plan');
 			}
 
 			// Validate that all plans contain only digits 0-5
-			const invalidPlans = plansArray.filter(plan => !/^[0-5]+$/.test(plan));
+			const invalidPlans = plansArray.filter((plan) => !/^[0-5]+$/.test(plan));
 			if (invalidPlans.length > 0) {
-				throw new Error(`Invalid route plans: ${invalidPlans.join(', ')} - only digits 0-5 are allowed`);
+				throw new Error(
+					`Invalid route plans: ${invalidPlans.join(', ')} - only digits 0-5 are allowed`,
+				);
 			}
 
 			console.log('Sending plans:', plansArray, 'Problem:', problemName());
-			const response = await exploreAedificium({plans: plansArray, problemName: problemName()});
+			const response = await exploreAedificium({
+				plans: plansArray,
+				problemName: problemName(),
+			});
 			setResult(response.data as ExploreResult);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Unknown error occurred');
@@ -67,7 +79,7 @@ const Index: Component = () => {
 	return (
 		<div class={styles.container}>
 			<h1>ICFPC 2025 Ædificium Explorer</h1>
-			
+
 			<form onSubmit={onSubmitExplore} class={styles.form}>
 				<div class={styles.inputGroup}>
 					<label for="problemName">Problem:</label>
@@ -91,7 +103,8 @@ const Index: Component = () => {
 						)}
 					</select>
 					<p class={styles.help}>
-						Select a problem to explore. "probatio" is the test problem with 3 rooms.
+						Select a problem to explore. "probatio" is the test problem with 3
+						rooms.
 					</p>
 				</div>
 
@@ -111,8 +124,12 @@ const Index: Component = () => {
 						Each digit represents a door number to enter.
 					</p>
 				</div>
-				
-				<button type="submit" disabled={loading() || !plans().trim()} class={styles.button}>
+
+				<button
+					type="submit"
+					disabled={loading() || !plans().trim()}
+					class={styles.button}
+				>
 					{loading() ? 'Exploring...' : 'Explore Ædificium'}
 				</button>
 			</form>
@@ -128,16 +145,21 @@ const Index: Component = () => {
 				<div class={styles.results}>
 					<h3>Exploration Results:</h3>
 					<div class={styles.queryInfo}>
-						<p><strong>Query Count:</strong> {result()!.queryCount}</p>
-						<p><strong>Results Found:</strong> {result()!.results.length}</p>
+						<p>
+							<strong>Query Count:</strong> {result()?.queryCount}
+						</p>
+						<p>
+							<strong>Results Found:</strong> {result()?.results.length}
+						</p>
 					</div>
-					
+
 					<div class={styles.resultsList}>
 						<h4>Results:</h4>
-						<For each={result()!.results}>
+						<For each={result()?.results}>
 							{(resultArray, index) => (
 								<div class={styles.resultItem}>
-									<strong>Plan {index() + 1}:</strong> [{resultArray.join(', ')}]
+									<strong>Plan {index() + 1}:</strong> [{resultArray.join(', ')}
+									]
 								</div>
 							)}
 						</For>

@@ -7,7 +7,11 @@ import {
 	collection,
 	type CollectionReference,
 } from 'firebase/firestore';
-import {getFunctions, connectFunctionsEmulator, httpsCallable} from 'firebase/functions';
+import {
+	getFunctions,
+	connectFunctionsEmulator,
+	httpsCallable,
+} from 'firebase/functions';
 import type {Task} from './schema.ts';
 
 const firebaseConfigResponse = await fetch('/__/firebase/init.json');
