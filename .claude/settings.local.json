@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\functions/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\src/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\src\\lib/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\src\\routes/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
+      "Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\.github\\workflows/**)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
