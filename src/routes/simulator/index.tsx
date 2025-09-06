@@ -338,12 +338,16 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 			from: {room: number; door: number; x: number; y: number};
 			to: {room: number; door: number; x: number; y: number};
 			status: 'normal' | 'traveled' | 'current';
+			isDirectional?: boolean; // Only current connections should have direction
 		}[] = [];
 		const seen = new Set<string>();
 
-		// Create sets for traveled and current passages
+		// Create sets for traveled and current passages with direction info
 		const traveledPassages = new Set<string>();
-		const currentPassage = new Set<string>();
+		const currentPassage = new Map<
+			string,
+			{fromRoom: number; toRoom: number; door: number}
+		>();
 
 		// If we have exploration steps, mark the passages
 		if (props.explorationSteps && props.currentStepIndex !== undefined) {
@@ -359,11 +363,13 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 					const door = step.previousState.doorTaken;
 
 					const passageKey = `${fromRoom}-${door}-${toRoom}`;
+					const reverseKey = `${toRoom}-${props.building.rooms[toRoom].doors.findIndex((d) => d.toRoom === fromRoom && d.toDoor === door)}-${fromRoom}`;
 
 					if (i === props.currentStepIndex) {
-						currentPassage.add(passageKey);
+						currentPassage.set(passageKey, {fromRoom, toRoom, door});
 					} else {
 						traveledPassages.add(passageKey);
+						traveledPassages.add(reverseKey); // Also mark reverse for traveled
 					}
 				}
 			}
@@ -398,16 +404,25 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 							targetDoor,
 						);
 
-						// Determine passage status
+						// Determine passage status and direction
 						const passageKey = `${room.id}-${door}-${targetRoom}`;
 						const reversePassageKey = `${targetRoom}-${targetDoor}-${room.id}`;
 						let status: 'normal' | 'traveled' | 'current' = 'normal';
+						let isDirectional = false;
+						let actualFrom = fromDoorPos;
+						let actualTo = toDoorPos;
 
-						if (
-							currentPassage.has(passageKey) ||
-							currentPassage.has(reversePassageKey)
-						) {
+						// Check if this is the current passage (with correct direction)
+						if (currentPassage.has(passageKey)) {
 							status = 'current';
+							isDirectional = true;
+							// Direction is correct: room -> targetRoom
+						} else if (currentPassage.has(reversePassageKey)) {
+							status = 'current';
+							isDirectional = true;
+							// Direction should be reversed: targetRoom -> room
+							actualFrom = toDoorPos;
+							actualTo = fromDoorPos;
 						} else if (
 							traveledPassages.has(passageKey) ||
 							traveledPassages.has(reversePassageKey)
@@ -416,14 +431,15 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 						}
 
 						conns.push({
-							from: {room: room.id, door, x: fromDoorPos.x, y: fromDoorPos.y},
+							from: {room: room.id, door, x: actualFrom.x, y: actualFrom.y},
 							to: {
 								room: targetRoom,
 								door: targetDoor,
-								x: toDoorPos.x,
-								y: toDoorPos.y,
+								x: actualTo.x,
+								y: actualTo.y,
 							},
 							status,
+							isDirectional,
 						});
 
 						if (room.id !== targetRoom) {
@@ -452,6 +468,20 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 				onMouseLeave={handleMouseUp}
 			>
 				<title>建物の構造図</title>
+
+				{/* Define arrow markers */}
+				<defs>
+					<marker
+						id="arrowhead-current"
+						markerWidth="6"
+						markerHeight="6"
+						refX="5"
+						refY="3"
+						orient="auto"
+					>
+						<polygon points="0 0, 6 3, 0 6" fill="#10b981" />
+					</marker>
+				</defs>
 				{/* 1. Draw rooms first */}
 				<For each={props.building.rooms}>
 					{(room) => {
@@ -555,6 +585,14 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 							);
 						}
 						// Regular connection or different-door self-loop
+						const getMarkerEnd = () => {
+							// Only show arrows for directional current connections
+							if (conn.status === 'current' && conn.isDirectional) {
+								return 'url(#arrowhead-current)';
+							}
+							return undefined;
+						};
+
 						return (
 							<line
 								x1={conn.from.x}
@@ -562,6 +600,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 								x2={conn.to.x}
 								y2={conn.to.y}
 								class={connectionClass()}
+								marker-end={getMarkerEnd()}
 							/>
 						);
 					}}

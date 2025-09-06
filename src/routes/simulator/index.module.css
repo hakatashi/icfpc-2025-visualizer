@@ -45,6 +45,13 @@
 	font-size: 14px;
 }
 
+.control input[type='range'] {
+	width: 200px;
+	max-width: 200px;
+	padding: 0;
+	margin-right: 10px;
+}
+
 .control textarea {
 	min-height: 80px;
 	resize: vertical;
