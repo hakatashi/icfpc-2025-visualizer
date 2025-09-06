@@ -21,9 +21,11 @@ const Index: Component = () => {
 							<p>実際のICFPC APIサーバーと通信して図書館を探索します</p>
 						</A>
 					</li>
-					<li class={styles.comingSoon}>
-						<h3>シミュレーター (準備中)</h3>
-						<p>ローカルで図書館探索をシミュレートします</p>
+					<li>
+						<A href="/simulator" class={styles.toolLink}>
+							<h3>図書館シミュレーター</h3>
+							<p>ローカルで図書館探索をシミュレートします</p>
+						</A>
 					</li>
 				</ul>
 			</div>

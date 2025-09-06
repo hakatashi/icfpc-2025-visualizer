@@ -1,0 +1,252 @@
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px;
+	font-family: system-ui, sans-serif;
+}
+
+.container h1 {
+	color: #2563eb;
+	margin-bottom: 30px;
+	text-align: center;
+}
+
+.controls {
+	background: #f8fafc;
+	padding: 20px;
+	border-radius: 8px;
+	margin-bottom: 30px;
+	border: 1px solid #e2e8f0;
+}
+
+.control {
+	margin-bottom: 20px;
+}
+
+.control:last-child {
+	margin-bottom: 0;
+}
+
+.control label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+	color: #374151;
+}
+
+.control select,
+.control input,
+.control textarea {
+	width: 100%;
+	max-width: 400px;
+	padding: 8px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 14px;
+}
+
+.control textarea {
+	min-height: 80px;
+	resize: vertical;
+	font-family: monospace;
+}
+
+.control textarea.invalid {
+	border-color: #ef4444;
+	background-color: #fef2f2;
+}
+
+.control small {
+	display: block;
+	margin-top: 5px;
+	color: #6b7280;
+	font-size: 12px;
+}
+
+button {
+	background: #2563eb;
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+	background: #1d4ed8;
+}
+
+button:disabled {
+	background: #9ca3af;
+	cursor: not-allowed;
+}
+
+.results {
+	margin-top: 30px;
+}
+
+.buildingInfo {
+	background: #f0f9ff;
+	padding: 15px;
+	border-radius: 6px;
+	margin-bottom: 20px;
+	border: 1px solid #0ea5e9;
+}
+
+.buildingInfo p {
+	margin: 5px 0;
+	font-weight: 500;
+}
+
+.rooms {
+	margin-bottom: 30px;
+}
+
+.rooms h3 {
+	color: #374151;
+	margin-bottom: 15px;
+}
+
+.roomDetail {
+	background: white;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 15px;
+	margin-bottom: 10px;
+}
+
+.roomDetail h4 {
+	color: #1f2937;
+	margin: 0 0 10px 0;
+	font-size: 16px;
+}
+
+.doors {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 8px;
+}
+
+.door {
+	background: #f3f4f6;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-family: monospace;
+}
+
+.explorationResults {
+	background: #f9fafb;
+	padding: 20px;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+}
+
+.explorationResults h3 {
+	color: #374151;
+	margin-top: 0;
+	margin-bottom: 15px;
+}
+
+.result {
+	background: white;
+	padding: 15px;
+	border-radius: 6px;
+	margin-bottom: 10px;
+	border: 1px solid #d1d5db;
+}
+
+.result h4 {
+	color: #1f2937;
+	margin: 0 0 8px 0;
+	font-family: monospace;
+	font-size: 14px;
+}
+
+.result p {
+	margin: 0;
+	font-family: monospace;
+	background: #f8fafc;
+	padding: 8px;
+	border-radius: 4px;
+	color: #1f2937;
+}
+
+/* Visualization styles */
+.visualization {
+	margin: 20px 0;
+	background: white;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 20px;
+}
+
+.buildingSvg {
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	background: #f9fafb;
+}
+
+/* Room hexagons */
+.room {
+	fill: #e0f2fe;
+	stroke: #0369a1;
+	stroke-width: 2;
+}
+
+.startingRoom {
+	fill: #fef3c7;
+	stroke: #d97706;
+	stroke-width: 3;
+}
+
+/* Room text */
+.roomId {
+	fill: #1f2937;
+	text-anchor: middle;
+	font-weight: bold;
+	font-size: 14px;
+	font-family: monospace;
+}
+
+.roomLabel {
+	fill: #374151;
+	text-anchor: middle;
+	font-size: 12px;
+	font-family: monospace;
+}
+
+/* Connections */
+.connection {
+	stroke: #6b7280;
+	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+.selfLoop {
+	stroke: #dc2626;
+	stroke-width: 2;
+	stroke-dasharray: 5, 5;
+	stroke-linecap: round;
+}
+
+/* Door markers and labels */
+.doorMarker {
+	fill: #3b82f6;
+	stroke: white;
+	stroke-width: 1;
+}
+
+.doorLabel {
+	fill: #1f2937;
+	font-size: 14px;
+	font-weight: bold;
+	text-anchor: middle;
+	font-family: monospace;
+	stroke: white;
+	stroke-width: 3;
+	paint-order: stroke fill;
+}

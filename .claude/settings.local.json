@@ -12,7 +12,11 @@
 			"Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
 			"Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer/**)",
 			"Read(/C:\\Users\\hakatashi\\Documents\\GitHub\\icfpc-2025-visualizer\\.github\\workflows/**)",
-			"Bash(npm run build:*)"
+			"Bash(npm run build:*)",
+			"Bash(npm run lint)",
+			"Bash(npm run format:*)",
+			"Bash(npm run lint:*)",
+			"Bash(npm run fix:*)"
 		],
 		"deny": [],
 		"ask": []
