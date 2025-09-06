@@ -450,9 +450,6 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 			}
 		}
 
-		console.log(conns);
-		console.log(props.building);
-
 		return conns;
 	});
 
@@ -687,6 +684,15 @@ const Simulator: Component = () => {
 
 	const maxRouteLength = () => problemSize() * 18;
 
+	const generateRandomRoutePlan = () => {
+		const length = maxRouteLength();
+		let randomPlan = '';
+		for (let i = 0; i < length; i++) {
+			randomPlan += Math.floor(Math.random() * 6).toString();
+		}
+		setRoutePlan(randomPlan);
+	};
+
 	const currentStep = createMemo(() => {
 		const steps = explorationSteps();
 		const index = currentStepIndex();
@@ -734,14 +740,23 @@ const Simulator: Component = () => {
 					<label for="routePlan">
 						ルートプラン (最大{maxRouteLength()}文字):
 					</label>
-					<input
-						type="text"
-						id="routePlan"
-						value={routePlan()}
-						onChange={(e) => setRoutePlan(e.currentTarget.value)}
-						placeholder="例: 012345"
-						class={isValidRoutePlan(routePlan()) ? '' : styles.invalid}
-					/>
+					<div class={styles.routePlanInputGroup}>
+						<input
+							type="text"
+							id="routePlan"
+							value={routePlan()}
+							onChange={(e) => setRoutePlan(e.currentTarget.value)}
+							placeholder="例: 012345"
+							class={isValidRoutePlan(routePlan()) ? '' : styles.invalid}
+						/>
+						<button
+							type="button"
+							onClick={generateRandomRoutePlan}
+							class={styles.generateButton}
+						>
+							ランダム生成
+						</button>
+					</div>
 					<small>
 						0-5の数字のみ使用してください。最大{maxRouteLength()}文字まで。
 					</small>
