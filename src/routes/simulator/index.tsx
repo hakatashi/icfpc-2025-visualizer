@@ -523,7 +523,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 						) {
 							// Same door self-loop: draw a curved loop
 							const angle = (Math.PI / 3) * conn.from.door;
-							const loopRadius = 25;
+							const loopRadius = 40;
 
 							// Create a circular arc extending outward from the door
 							const startX = conn.from.x;
