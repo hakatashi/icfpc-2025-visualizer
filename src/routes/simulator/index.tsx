@@ -45,7 +45,7 @@ const generateBuilding = (numRooms: number, seed: number): Building => {
 	for (let i = 0; i < numRooms; i++) {
 		rooms.push({
 			id: i,
-			label: rng.nextInt(4), // 2-bit integer (0-3)
+			label: i % 4,
 			doors: new Array(6).fill(null).map(() => ({toRoom: -1, toDoor: -1})), // 6 doors per hexagonal room
 		});
 	}
@@ -147,33 +147,68 @@ const generateBuilding = (numRooms: number, seed: number): Building => {
 	};
 };
 
-const simulateExploration = (
+interface ExplorationState {
+	roomId: number;
+	label: number;
+	doorTaken?: number;
+}
+
+interface ExplorationStep {
+	currentState: ExplorationState;
+	previousState?: ExplorationState;
+	stepIndex: number;
+	totalSteps: number;
+}
+
+const simulateExplorationSteps = (
 	building: Building,
 	routePlan: string,
-): number[] => {
-	const result: number[] = [];
+): ExplorationStep[] => {
+	const steps: ExplorationStep[] = [];
 	let currentRoom = building.startingRoom;
 
-	// Record the starting room label
-	result.push(building.rooms[currentRoom].label);
+	// Record the starting step
+	steps.push({
+		currentState: {
+			roomId: currentRoom,
+			label: building.rooms[currentRoom].label,
+		},
+		stepIndex: 0,
+		totalSteps: routePlan.length + 1,
+	});
 
-	// Follow the route plan
-	for (const doorChar of routePlan) {
+	// Follow the route plan step by step
+	for (let i = 0; i < routePlan.length; i++) {
+		const doorChar = routePlan[i];
 		const door = Number.parseInt(doorChar, 10);
 		if (door < 0 || door > 5) continue; // Skip invalid door numbers
+
+		const previousState = {
+			roomId: currentRoom,
+			label: building.rooms[currentRoom].label,
+			doorTaken: door,
+		};
 
 		const doorConnection = building.rooms[currentRoom].doors[door];
 		if (doorConnection.toRoom !== -1) {
 			currentRoom = doorConnection.toRoom;
-			result.push(building.rooms[currentRoom].label);
 		} else {
 			// This shouldn't happen since all doors should be connected
 			// But if it does, stay in current room
-			result.push(building.rooms[currentRoom].label);
 		}
+
+		steps.push({
+			currentState: {
+				roomId: currentRoom,
+				label: building.rooms[currentRoom].label,
+			},
+			previousState,
+			stepIndex: i + 1,
+			totalSteps: routePlan.length + 1,
+		});
 	}
 
-	return result;
+	return steps;
 };
 
 // Helper functions for hexagonal visualization
@@ -219,6 +254,9 @@ const getRoomPosition = (
 interface BuildingVisualizationProps {
 	building: Building;
 	startingRoom: number;
+	currentStep?: ExplorationStep;
+	explorationSteps?: ExplorationStep[];
+	currentStepIndex?: number;
 }
 
 const BuildingVisualization: Component<BuildingVisualizationProps> = (
@@ -299,8 +337,37 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 		const conns: {
 			from: {room: number; door: number; x: number; y: number};
 			to: {room: number; door: number; x: number; y: number};
+			status: 'normal' | 'traveled' | 'current';
 		}[] = [];
 		const seen = new Set<string>();
+
+		// Create sets for traveled and current passages
+		const traveledPassages = new Set<string>();
+		const currentPassage = new Set<string>();
+
+		// If we have exploration steps, mark the passages
+		if (props.explorationSteps && props.currentStepIndex !== undefined) {
+			for (
+				let i = 1;
+				i <= props.currentStepIndex && i < props.explorationSteps.length;
+				i++
+			) {
+				const step = props.explorationSteps[i];
+				if (step.previousState && step.previousState.doorTaken !== undefined) {
+					const fromRoom = step.previousState.roomId;
+					const toRoom = step.currentState.roomId;
+					const door = step.previousState.doorTaken;
+
+					const passageKey = `${fromRoom}-${door}-${toRoom}`;
+
+					if (i === props.currentStepIndex) {
+						currentPassage.add(passageKey);
+					} else {
+						traveledPassages.add(passageKey);
+					}
+				}
+			}
+		}
 
 		for (const room of props.building.rooms) {
 			const roomPos = roomPositions().get(room.id)!;
@@ -329,6 +396,23 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 							targetDoor,
 						);
 
+						// Determine passage status
+						const passageKey = `${room.id}-${door}-${targetRoom}`;
+						const reversePassageKey = `${targetRoom}-${targetDoor}-${room.id}`;
+						let status: 'normal' | 'traveled' | 'current' = 'normal';
+
+						if (
+							currentPassage.has(passageKey) ||
+							currentPassage.has(reversePassageKey)
+						) {
+							status = 'current';
+						} else if (
+							traveledPassages.has(passageKey) ||
+							traveledPassages.has(reversePassageKey)
+						) {
+							status = 'traveled';
+						}
+
 						conns.push({
 							from: {room: room.id, door, x: fromDoorPos.x, y: fromDoorPos.y},
 							to: {
@@ -337,6 +421,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 								x: toDoorPos.x,
 								y: toDoorPos.y,
 							},
+							status,
 						});
 
 						if (room.id !== targetRoom) {
@@ -352,7 +437,6 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 
 	return (
 		<div class={styles.visualization}>
-			<h3>建物の視覚化</h3>
 			<svg
 				width={svgWidth()}
 				height={svgHeight()}
@@ -386,14 +470,9 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 									onMouseDown={(e) => handleMouseDown(room.id, e)}
 								/>
 
-								{/* Room ID */}
-								<text x={pos().x} y={pos().y - 5} class={styles.roomId}>
-									{room.id}
-								</text>
-
 								{/* Room Label */}
-								<text x={pos().x} y={pos().y + 15} class={styles.roomLabel}>
-									L:{room.label}
+								<text x={pos().x} y={pos().y + 5} class={styles.roomId}>
+									{room.label}
 								</text>
 							</g>
 						);
@@ -427,6 +506,17 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 				{/* 3. Draw passages */}
 				<For each={connections()}>
 					{(conn) => {
+						const connectionClass = () => {
+							switch (conn.status) {
+								case 'current':
+									return styles.connectionCurrent;
+								case 'traveled':
+									return styles.connectionTraveled;
+								default:
+									return styles.connection;
+							}
+						};
+
 						if (
 							conn.from.room === conn.to.room &&
 							conn.from.door === conn.to.door
@@ -456,7 +546,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 							const pathData = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${startX} ${startY}`;
 
 							return (
-								<path d={pathData} fill="none" class={styles.connection} />
+								<path d={pathData} fill="none" class={connectionClass()} />
 							);
 						}
 						// Regular connection or different-door self-loop
@@ -466,7 +556,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 								y1={conn.from.y}
 								x2={conn.to.x}
 								y2={conn.to.y}
-								class={styles.connection}
+								class={connectionClass()}
 							/>
 						);
 					}}
@@ -506,19 +596,45 @@ const Simulator: Component = () => {
 	const [problemSize, setProblemSize] = createSignal<number>(3);
 	const [seed, setSeed] = createSignal<number>(12345);
 	const [routePlan, setRoutePlan] = createSignal<string>('');
-	const [explorationResults, setExplorationResults] = createSignal<number[][]>(
-		[],
-	);
+	const [explorationSteps, setExplorationSteps] = createSignal<
+		ExplorationStep[]
+	>([]);
+	const [currentStepIndex, setCurrentStepIndex] = createSignal<number>(0);
 
 	const building = createMemo(() => generateBuilding(problemSize(), seed()));
 
-	const handleExplore = () => {
-		const plans = routePlan()
-			.split(',')
-			.map((plan) => plan.trim())
-			.filter((plan) => plan.length > 0);
-		const results = plans.map((plan) => simulateExploration(building(), plan));
-		setExplorationResults(results);
+	const handleLoadPlan = () => {
+		const plan = routePlan().trim();
+		if (plan.length > 0 && isValidRoutePlan(plan)) {
+			const steps = simulateExplorationSteps(building(), plan);
+			setExplorationSteps(steps);
+			setCurrentStepIndex(0);
+		}
+	};
+
+	// Navigation functions
+	const goToStep = (stepIndex: number) => {
+		const steps = explorationSteps();
+		if (steps.length > 0) {
+			setCurrentStepIndex(Math.max(0, Math.min(stepIndex, steps.length - 1)));
+		}
+	};
+
+	const goForward = (amount = 1) => {
+		goToStep(currentStepIndex() + amount);
+	};
+
+	const goBackward = (amount = 1) => {
+		goToStep(currentStepIndex() - amount);
+	};
+
+	const goToBeginning = () => {
+		goToStep(0);
+	};
+
+	const goToEnd = () => {
+		const steps = explorationSteps();
+		goToStep(steps.length - 1);
 	};
 
 	const isValidRoutePlan = (plan: string): boolean => {
@@ -526,6 +642,14 @@ const Simulator: Component = () => {
 	};
 
 	const maxRouteLength = () => problemSize() * 18;
+
+	const currentStep = createMemo(() => {
+		const steps = explorationSteps();
+		const index = currentStepIndex();
+		return steps.length > 0 && index >= 0 && index < steps.length
+			? steps[index]
+			: undefined;
+	});
 
 	return (
 		<div class={styles.container}>
@@ -564,43 +688,111 @@ const Simulator: Component = () => {
 
 				<div class={styles.control}>
 					<label for="routePlan">
-						ルートプラン (最大{maxRouteLength()}文字、カンマ区切りで複数指定可):
+						ルートプラン (最大{maxRouteLength()}文字):
 					</label>
-					<textarea
+					<input
+						type="text"
 						id="routePlan"
 						value={routePlan()}
 						onChange={(e) => setRoutePlan(e.currentTarget.value)}
-						placeholder="例: 012345, 543210"
+						placeholder="例: 012345"
 						class={isValidRoutePlan(routePlan()) ? '' : styles.invalid}
 					/>
 					<small>
-						0-5の数字のみ使用してください。各プランは{maxRouteLength()}
-						文字以下にしてください。
+						0-5の数字のみ使用してください。最大{maxRouteLength()}文字まで。
 					</small>
 				</div>
 
 				<button
 					type="button"
-					onClick={handleExplore}
+					onClick={handleLoadPlan}
 					disabled={!isValidRoutePlan(routePlan()) || routePlan().trim() === ''}
 				>
-					探索実行
+					プランを読み込み
 				</button>
+
+				{/* Step navigation controls */}
+				{explorationSteps().length > 0 && (
+					<div class={styles.stepControls}>
+						<div class={styles.navigationButtons}>
+							<button
+								type="button"
+								onClick={goToBeginning}
+								disabled={currentStepIndex() === 0}
+							>
+								最初
+							</button>
+							<button
+								type="button"
+								onClick={() => goBackward(10)}
+								disabled={currentStepIndex() === 0}
+							>
+								-10
+							</button>
+							<button
+								type="button"
+								onClick={() => goBackward(1)}
+								disabled={currentStepIndex() === 0}
+							>
+								-1
+							</button>
+							<button
+								type="button"
+								onClick={() => goForward(1)}
+								disabled={currentStepIndex() >= explorationSteps().length - 1}
+							>
+								+1
+							</button>
+							<button
+								type="button"
+								onClick={() => goForward(10)}
+								disabled={currentStepIndex() >= explorationSteps().length - 1}
+							>
+								+10
+							</button>
+							<button
+								type="button"
+								onClick={goToEnd}
+								disabled={currentStepIndex() >= explorationSteps().length - 1}
+							>
+								最後
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 
-			<div class={styles.results}>
-				<h2>建物構造</h2>
-				<div class={styles.buildingInfo}>
-					<p>
-						開始部屋: {building().startingRoom} (ラベル:{' '}
-						{building().rooms[building().startingRoom].label})
-					</p>
-					<p>総部屋数: {building().rooms.length}</p>
+			{explorationSteps().length > 0 && (
+				<div class={styles.explorationResults}>
+					<h3>探索結果</h3>
+					<div class={styles.result}>
+						<h4>プラン: "{routePlan()}"</h4>
+						<p>
+							観察されたラベル: [
+							{explorationSteps()
+								.slice(0, currentStepIndex() + 1)
+								.map((step) => step.currentState.label)
+								.join(', ')}
+							]
+						</p>
+						<p>
+							全ステップでのラベル: [
+							{explorationSteps()
+								.map((step) => step.currentState.label)
+								.join(', ')}
+							]
+						</p>
+					</div>
 				</div>
+			)}
 
+			<div class={styles.results}>
 				<BuildingVisualization
 					building={building()}
 					startingRoom={building().startingRoom}
+					currentStep={currentStep()}
+					explorationSteps={explorationSteps()}
+					currentStepIndex={currentStepIndex()}
 				/>
 
 				<div class={styles.rooms}>
@@ -625,23 +817,6 @@ const Simulator: Component = () => {
 						)}
 					</For>
 				</div>
-
-				{explorationResults().length > 0 && (
-					<div class={styles.explorationResults}>
-						<h3>探索結果</h3>
-						<For each={explorationResults()}>
-							{(result, index) => (
-								<div class={styles.result}>
-									<h4>
-										プラン {index() + 1}: "
-										{routePlan().split(',')[index()]?.trim()}"
-									</h4>
-									<p>観察されたラベル: [{result.join(', ')}]</p>
-								</div>
-							)}
-						</For>
-					</div>
-				)}
 			</div>
 		</div>
 	);

@@ -167,12 +167,55 @@ button:disabled {
 }
 
 .result p {
-	margin: 0;
+	margin: 5px 0;
 	font-family: monospace;
 	background: #f8fafc;
 	padding: 8px;
 	border-radius: 4px;
 	color: #1f2937;
+}
+
+/* Step controls */
+.stepControls {
+	background: #f0f9ff;
+	padding: 20px;
+	border-radius: 8px;
+	margin: 20px 0;
+	border: 1px solid #0ea5e9;
+}
+
+.stepControls h3 {
+	color: #374151;
+	margin-top: 0;
+	margin-bottom: 15px;
+}
+
+.stepInfo {
+	margin-bottom: 15px;
+	padding: 10px;
+	background: white;
+	border-radius: 6px;
+	border: 1px solid #bfdbfe;
+}
+
+.stepInfo p {
+	margin: 5px 0;
+	font-weight: 500;
+	color: #1f2937;
+}
+
+.navigationButtons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.navigationButtons button {
+	flex: 1;
+	min-width: 100px;
+	font-size: 12px;
+	padding: 8px 12px;
 }
 
 /* Visualization styles */
@@ -220,7 +263,7 @@ button:disabled {
 	fill: #1f2937;
 	text-anchor: middle;
 	font-weight: bold;
-	font-size: 14px;
+	font-size: 24px;
 	font-family: monospace;
 }
 
@@ -235,6 +278,18 @@ button:disabled {
 .connection {
 	stroke: red;
 	stroke-width: 2;
+	stroke-linecap: round;
+}
+
+.connectionTraveled {
+	stroke: #3b82f6; /* blue */
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+
+.connectionCurrent {
+	stroke: #10b981; /* green */
+	stroke-width: 4;
 	stroke-linecap: round;
 }
 
