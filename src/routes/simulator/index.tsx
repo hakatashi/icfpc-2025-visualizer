@@ -382,8 +382,10 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 					// Include both room and door numbers to distinguish different passages between the same rooms
 					const connectionKey =
 						room.id === targetRoom
-							? `self-${room.id}-${door}-${targetDoor}` // Self-loop: include both doors
-							: `${Math.min(room.id, targetRoom)}-${Math.min(door, targetDoor)}-${Math.max(room.id, targetRoom)}-${Math.max(door, targetDoor)}`;
+							? `self-${room.id}-${Math.min(door, targetDoor)}-${Math.max(door, targetDoor)}`
+							: room.id < targetRoom
+								? `${room.id}-${door}-${targetRoom}-${targetDoor}`
+								: `${targetRoom}-${targetDoor}-${room.id}-${door}`;
 
 					// For self-loops, always draw them. For regular connections, only draw if not seen
 					if (room.id === targetRoom || !seen.has(connectionKey)) {
@@ -431,6 +433,9 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 				}
 			}
 		}
+
+		console.log(conns);
+		console.log(props.building);
 
 		return conns;
 	});
