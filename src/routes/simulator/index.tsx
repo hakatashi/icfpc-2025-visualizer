@@ -224,12 +224,22 @@ interface BuildingVisualizationProps {
 const BuildingVisualization: Component<BuildingVisualizationProps> = (
 	props,
 ) => {
-	const roomPositions = createMemo(() => {
+	const [roomPositions, setRoomPositions] = createSignal(
+		new Map<number, {x: number; y: number}>(),
+	);
+	const [draggedRoom, setDraggedRoom] = createSignal<number | null>(null);
+	const [dragOffset, setDragOffset] = createSignal<{x: number; y: number}>({
+		x: 0,
+		y: 0,
+	});
+
+	// Initialize room positions
+	createMemo(() => {
 		const positions = new Map<number, {x: number; y: number}>();
 		for (let i = 0; i < props.building.rooms.length; i++) {
 			positions.set(i, getRoomPosition(i, props.building.rooms.length));
 		}
-		return positions;
+		setRoomPositions(positions);
 	});
 
 	const svgWidth = createMemo(() => {
@@ -242,6 +252,48 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 		const rows = Math.ceil(props.building.rooms.length / cols);
 		return Math.max(300, 100 + rows * 180);
 	});
+
+	const getSvgCoordinates = (event: MouseEvent, svgElement: SVGSVGElement) => {
+		const rect = svgElement.getBoundingClientRect();
+		return {
+			x: event.clientX - rect.left,
+			y: event.clientY - rect.top,
+		};
+	};
+
+	const handleMouseDown = (roomId: number, event: MouseEvent) => {
+		event.preventDefault();
+		setDraggedRoom(roomId);
+
+		const svgElement = event.currentTarget.ownerSVGElement!;
+		const svgCoords = getSvgCoordinates(event, svgElement);
+		const roomPos = roomPositions().get(roomId)!;
+		setDragOffset({
+			x: svgCoords.x - roomPos.x,
+			y: svgCoords.y - roomPos.y,
+		});
+	};
+
+	const handleMouseMove = (event: MouseEvent) => {
+		const dragged = draggedRoom();
+		if (dragged !== null) {
+			event.preventDefault();
+			const svgElement = event.currentTarget as SVGSVGElement;
+			const svgCoords = getSvgCoordinates(event, svgElement);
+			const offset = dragOffset();
+			const newPositions = new Map(roomPositions());
+			newPositions.set(dragged, {
+				x: svgCoords.x - offset.x,
+				y: svgCoords.y - offset.y,
+			});
+			setRoomPositions(newPositions);
+		}
+	};
+
+	const handleMouseUp = (event: MouseEvent) => {
+		event.preventDefault();
+		setDraggedRoom(null);
+	};
 
 	const connections = createMemo(() => {
 		const conns: {
@@ -306,31 +358,41 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 				height={svgHeight()}
 				class={styles.buildingSvg}
 				aria-label="建物の構造図"
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseUp}
 			>
 				<title>建物の構造図</title>
 				{/* 1. Draw rooms first */}
 				<For each={props.building.rooms}>
 					{(room) => {
-						const pos = roomPositions().get(room.id)!;
+						const pos = createMemo(() => roomPositions().get(room.id)!);
 						return (
 							<g>
 								{/* Hexagon */}
+								{/** biome-ignore lint/a11y/noStaticElementInteractions: SVG内でのドラッグ操作のため、あえて<polygon>を使用しています。 */}
 								<polygon
-									points={getHexagonPoints(pos.x, pos.y, 60)}
+									points={getHexagonPoints(pos().x, pos().y, 60)}
 									class={
 										room.id === props.startingRoom
 											? styles.startingRoom
 											: styles.room
 									}
+									style={{
+										cursor: draggedRoom() === room.id ? 'grabbing' : 'grab',
+									}}
+									tabindex="0"
+									aria-label={`部屋 ${room.id} をドラッグして移動`}
+									onMouseDown={(e) => handleMouseDown(room.id, e)}
 								/>
 
 								{/* Room ID */}
-								<text x={pos.x} y={pos.y - 5} class={styles.roomId}>
+								<text x={pos().x} y={pos().y - 5} class={styles.roomId}>
 									{room.id}
 								</text>
 
 								{/* Room Label */}
-								<text x={pos.x} y={pos.y + 15} class={styles.roomLabel}>
+								<text x={pos().x} y={pos().y + 15} class={styles.roomLabel}>
 									L:{room.label}
 								</text>
 							</g>
@@ -341,15 +403,17 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 				{/* 2. Draw door markers */}
 				<For each={props.building.rooms}>
 					{(room) => {
-						const pos = roomPositions().get(room.id)!;
+						const pos = createMemo(() => roomPositions().get(room.id)!);
 						return (
 							<For each={Array.from({length: 6}, (_, i) => i)}>
 								{(door) => {
-									const doorPos = getDoorPosition(pos.x, pos.y, 60, door);
+									const doorPos = createMemo(() =>
+										getDoorPosition(pos().x, pos().y, 60, door),
+									);
 									return (
 										<circle
-											cx={doorPos.x}
-											cy={doorPos.y}
+											cx={doorPos().x}
+											cy={doorPos().y}
 											r="4"
 											class={styles.doorMarker}
 										/>
@@ -362,35 +426,67 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 
 				{/* 3. Draw passages */}
 				<For each={connections()}>
-					{(conn) => (
-						<line
-							x1={conn.from.x}
-							y1={conn.from.y}
-							x2={conn.to.x}
-							y2={conn.to.y}
-							class={
-								conn.from.room === conn.to.room
-									? styles.selfLoop
-									: styles.connection
-							}
-						/>
-					)}
+					{(conn) => {
+						if (
+							conn.from.room === conn.to.room &&
+							conn.from.door === conn.to.door
+						) {
+							// Same door self-loop: draw a curved loop
+							const angle = (Math.PI / 3) * conn.from.door;
+							const loopRadius = 25;
+
+							// Create a circular arc extending outward from the door
+							const startX = conn.from.x;
+							const startY = conn.from.y;
+
+							// Control points for the loop curve
+							const offsetX = Math.cos(angle) * loopRadius;
+							const offsetY = Math.sin(angle) * loopRadius;
+
+							// Perpendicular direction for curve width
+							const perpAngle = angle + Math.PI / 2;
+							const perpX = Math.cos(perpAngle) * loopRadius * 0.7;
+							const perpY = Math.sin(perpAngle) * loopRadius * 0.7;
+
+							const cp1X = startX + offsetX + perpX;
+							const cp1Y = startY + offsetY + perpY;
+							const cp2X = startX + offsetX - perpX;
+							const cp2Y = startY + offsetY - perpY;
+
+							const pathData = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${startX} ${startY}`;
+
+							return (
+								<path d={pathData} fill="none" class={styles.connection} />
+							);
+						}
+						// Regular connection or different-door self-loop
+						return (
+							<line
+								x1={conn.from.x}
+								y1={conn.from.y}
+								x2={conn.to.x}
+								y2={conn.to.y}
+								class={styles.connection}
+							/>
+						);
+					}}
 				</For>
 
 				{/* 4. Draw door numbers (on top) */}
 				<For each={props.building.rooms}>
 					{(room) => {
-						const pos = roomPositions().get(room.id)!;
+						const pos = createMemo(() => roomPositions().get(room.id)!);
 						return (
 							<For each={Array.from({length: 6}, (_, i) => i)}>
 								{(door) => {
-									const _doorPos = getDoorPosition(pos.x, pos.y, 60, door);
 									// Position label slightly outside the hexagon corner
-									const labelPos = getDoorPosition(pos.x, pos.y, 75, door);
+									const labelPos = createMemo(() =>
+										getDoorPosition(pos().x, pos().y, 75, door),
+									);
 									return (
 										<text
-											x={labelPos.x}
-											y={labelPos.y}
+											x={labelPos().x}
+											y={labelPos().y}
 											class={styles.doorLabel}
 										>
 											{door}

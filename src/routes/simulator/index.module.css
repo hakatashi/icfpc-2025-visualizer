@@ -195,12 +195,24 @@ button:disabled {
 	fill: #e0f2fe;
 	stroke: #0369a1;
 	stroke-width: 2;
+	cursor: grab;
+	user-select: none;
+}
+
+.room:hover {
+	fill: #bae6fd;
 }
 
 .startingRoom {
 	fill: #fef3c7;
 	stroke: #d97706;
 	stroke-width: 3;
+	cursor: grab;
+	user-select: none;
+}
+
+.startingRoom:hover {
+	fill: #fed7aa;
 }
 
 /* Room text */
@@ -221,15 +233,8 @@ button:disabled {
 
 /* Connections */
 .connection {
-	stroke: #6b7280;
+	stroke: red;
 	stroke-width: 2;
-	stroke-linecap: round;
-}
-
-.selfLoop {
-	stroke: #dc2626;
-	stroke-width: 2;
-	stroke-dasharray: 5, 5;
 	stroke-linecap: round;
 }
 
