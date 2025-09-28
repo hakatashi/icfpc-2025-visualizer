@@ -1,48 +1,61 @@
-import {test, expect} from 'vitest';
-import {render, waitFor} from '@solidjs/testing-library';
-import userEvent from '@testing-library/user-event';
+import {test, expect, vi} from 'vitest';
+import {render} from '@solidjs/testing-library';
 import Index from './index.js';
 
-const user = userEvent.setup();
+// Mock the router components
+vi.mock('@solidjs/router', () => ({
+	A: (props: any) => (
+		<a href={props.href} class={props.class}>
+			{props.children}
+		</a>
+	),
+}));
 
-test('has add task button', async () => {
+test('renders main heading', () => {
 	const {getByRole} = render(() => <Index />);
-	const addTaskButton = getByRole('button');
-	expect(addTaskButton).toHaveTextContent('Add Task');
+
+	const heading = getByRole('heading', {level: 1});
+	expect(heading).toHaveTextContent('ICFPC 2025 ビジュアライザー');
 });
 
-test('is able to add task', async () => {
-	const {getByRole, getByText, getAllByRole} = render(() => <Index />);
+test('renders description text', () => {
+	const {getByText} = render(() => <Index />);
 
-	{
-		const taskInput = getByRole('textbox');
-		expect(taskInput).toHaveValue('');
+	expect(
+		getByText('ICFPC 2025 チャレンジのためのツールセットです。'),
+	).toBeInTheDocument();
+});
 
-		const addTaskButton = getByText('Add Task');
-		expect(addTaskButton).not.toBeDisabled();
+test('renders available tools section', () => {
+	const {getByRole} = render(() => <Index />);
 
-		const tasks = getAllByRole('listitem');
-		expect(tasks).toHaveLength(1);
+	const toolsHeading = getByRole('heading', {level: 2});
+	expect(toolsHeading).toHaveTextContent('利用可能なツール:');
+});
 
-		await user.type(taskInput, 'Hello, World!');
-		await user.click(addTaskButton);
-	}
+test('renders library exploration tool link', () => {
+	const {getByRole} = render(() => <Index />);
 
-	await waitFor(
-		() => {
-			const taskInput = getByRole('textbox');
-			expect(taskInput).toHaveValue('');
-		},
-		{
-			timeout: 1000,
-		},
+	const exploreLink = getByRole('link', {name: /図書館探索ツール/});
+	expect(exploreLink).toHaveAttribute('href', '/submit/explore');
+	expect(exploreLink).toHaveTextContent(
+		'実際のICFPC APIサーバーと通信して図書館を探索します',
 	);
+});
 
-	{
-		const tasks = getAllByRole('listitem');
-		expect(tasks).toHaveLength(2);
+test('renders library simulator tool link', () => {
+	const {getByRole} = render(() => <Index />);
 
-		const lastTask = tasks[tasks.length - 2];
-		expect(lastTask).toHaveTextContent('Hello, World!');
-	}
+	const simulatorLink = getByRole('link', {name: /図書館シミュレーター/});
+	expect(simulatorLink).toHaveAttribute('href', '/simulator');
+	expect(simulatorLink).toHaveTextContent(
+		'ローカルで図書館探索をシミュレートします',
+	);
+});
+
+test('renders tool list with correct number of items', () => {
+	const {getAllByRole} = render(() => <Index />);
+
+	const listItems = getAllByRole('listitem');
+	expect(listItems).toHaveLength(2);
 });
