@@ -308,7 +308,7 @@ const BuildingVisualization: Component<BuildingVisualizationProps> = (
 		}
 
 		const svgElement = event.currentTarget.ownerSVGElement;
-		const svgCoords = getSvgCoordinates(event, svgElement);
+		const svgCoords = getSvgCoordinates(event, svgElement!);
 		const roomPos = roomPositions().get(roomId)!;
 		setDragOffset({
 			x: svgCoords.x - roomPos.x,
