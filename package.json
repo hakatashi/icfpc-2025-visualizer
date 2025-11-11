@@ -18,7 +18,7 @@
 		"install": "cd functions && npm install"
 	},
 	"dependencies": {
-		"@solidjs/router": "^0.15.3",
+		"@solidjs/router": "^0.15.4",
 		"@solidjs/start": "^1.2.0",
 		"concurrently": "^9.2.1",
 		"firebase": "^12.5.0",
