@@ -37,7 +37,7 @@
 		"@testing-library/user-event": "^14.6.1",
 		"husky": "^9.1.7",
 		"jsdom": "^27.3.0",
-		"vitest": "^4.0.15",
+		"vitest": "^4.0.16",
 		"wait-on": "^9.0.3"
 	}
 }
